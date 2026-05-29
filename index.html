@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Water Safety Email Builder</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@400;600;700;800&display=swap');
+
+    :root {
+      --bg:          #131313;
+      --bg-card:     #1c1c1c;
+      --bg-input:    #242424;
+      --border:      #2e2e2e;
+      --border-focus:#fff833;
+      --text:        #e0e0e0;
+      --text-muted:  #888;
+      --accent:      #fff833;
+      --accent2:     #ffba24;
+      --success:     #4ade80;
+      --radius:      10px;
+      --transition:  0.22s cubic-bezier(.4,0,.2,1);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { font-size: 16px; scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Mono', monospace;
+      min-height: 100vh;
+      padding: 0;
+      overflow-x: hidden;
+    }
+
+    /* ── Noise texture overlay ── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0.6;
+    }
+
+    /* ── Accent grid lines ── */
+    body::after {
+      content: '';
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background-image:
+        linear-gradient(rgba(255,248,51,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,248,51,0.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── Layout ── */
+    .app-wrap {
+      position: relative;
+      z-index: 1;
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 2rem 1.25rem 4rem;
+    }
+
+    /* ── Header ── */
+    header {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 2.5rem;
+      padding-bottom: 1.5rem;
+      border-bottom: 1px solid var(--border);
+      animation: fadeSlideDown 0.5s ease both;
+    }
+
+    .header-icon {
+      width: 44px; height: 44px;
+      background: var(--accent);
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .header-icon svg { width: 24px; height: 24px; }
+
+    .header-text h1 {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: clamp(1.2rem, 3vw, 1.6rem);
+      letter-spacing: -0.02em;
+      color: #fff;
+      line-height: 1.1;
+    }
+
+    .header-text p {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 0.2rem;
+      letter-spacing: 0.05em;
+    }
+
+    /* ── Two-column layout ── */
+    .main-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      align-items: start;
+    }
+
+    @media (max-width: 768px) {
+      .main-grid { grid-template-columns: 1fr; }
+    }
+
+    /* ── Section cards ── */
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      animation: fadeSlideUp 0.5s ease both;
+    }
+
+    .card:nth-child(2) { animation-delay: 0.08s; }
+
+    .card-title {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 0.75rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 1.25rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .card-title::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    /* ── Form fields ── */
+    .field {
+      margin-bottom: 1.1rem;
+    }
+
+    label {
+      display: block;
+      font-size: 0.7rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 0.45rem;
+      transition: color var(--transition);
+    }
+
+    .field:focus-within label { color: var(--accent); }
+
+    input, select {
+      width: 100%;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      font-family: 'DM Mono', monospace;
+      font-size: 0.875rem;
+      padding: 0.75rem 0.875rem;
+      outline: none;
+      transition: border-color var(--transition), box-shadow var(--transition), background var(--transition);
+      min-height: 48px;
+      appearance: none;
+    }
+
+    select {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23888' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 0.875rem center;
+      padding-right: 2.5rem;
+      cursor: pointer;
+    }
+
+    select option {
+      background: var(--bg-card);
+      color: var(--text);
+    }
+
+    input::placeholder { color: #555; }
+
+    input:focus, select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(255,248,51,0.12);
+      background: #2a2a2a;
+    }
+
+    input:not(:placeholder-shown):not(:focus) {
+      border-color: #3a3a3a;
+    }
+
+    /* ── Preview panel ── */
+    .preview-card {
+      position: sticky;
+      top: 1.5rem;
+    }
+
+    .email-preview {
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 1.25rem;
+      font-size: 0.8rem;
+      line-height: 1.75;
+      color: var(--text);
+      white-space: pre-wrap;
+      word-break: break-word;
+      min-height: 200px;
+    }
+
+    .email-preview .subject-line {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 0.85rem;
+      color: var(--accent2);
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 0.75rem;
+      margin-bottom: 1rem;
+    }
+
+    .email-preview .label {
+      font-size: 0.65rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 0.15rem;
+    }
+
+    /* Highlighted placeholder tokens */
+    .token {
+      background: rgba(255,248,51,0.13);
+      color: var(--accent);
+      border-radius: 3px;
+      padding: 0 2px;
+      font-style: italic;
+    }
+
+    .email-body-text {
+      margin-top: 0.75rem;
+      color: var(--text);
+    }
+
+    /* ── Action buttons ── */
+    .actions {
+      display: flex;
+      gap: 0.75rem;
+      margin-top: 1.25rem;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1.25rem;
+      border-radius: 6px;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.78rem;
+      letter-spacing: 0.06em;
+      font-weight: 500;
+      cursor: pointer;
+      border: none;
+      outline: none;
+      min-height: 48px;
+      min-width: 48px;
+      transition: all var(--transition);
+      flex: 1;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #131313;
+    }
+
+    .btn-primary:hover {
+      background: #ffe84a;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 20px rgba(255,248,51,0.25);
+    }
+
+    .btn-primary:active { transform: translateY(0); }
+
+    .btn-secondary {
+      background: transparent;
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+
+    .btn-secondary:hover {
+      border-color: var(--accent2);
+      color: var(--accent2);
+      background: rgba(255,186,36,0.06);
+      transform: translateY(-1px);
+    }
+
+    .btn-secondary:active { transform: translateY(0); }
+
+    /* ── Toast ── */
+    .toast {
+      position: fixed;
+      bottom: 1.5rem;
+      left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      background: var(--success);
+      color: #0a1f12;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.8rem;
+      font-weight: 500;
+      padding: 0.65rem 1.25rem;
+      border-radius: 100px;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      z-index: 1000;
+      transition: transform 0.3s cubic-bezier(.34,1.56,.64,1), opacity 0.3s ease;
+      opacity: 0;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+
+    /* ── Animations ── */
+    @keyframes fadeSlideDown {
+      from { opacity: 0; transform: translateY(-16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes fadeSlideUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── Completion indicator ── */
+    .field-status {
+      display: inline-block;
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--border);
+      margin-left: 0.4rem;
+      vertical-align: middle;
+      transition: background var(--transition);
+    }
+
+    .field-status.filled { background: var(--success); }
+
+    /* ── Progress bar ── */
+    .progress-wrap {
+      margin-bottom: 1.25rem;
+    }
+
+    .progress-label {
+      font-size: 0.65rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 0.4rem;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .progress-bar-bg {
+      background: var(--bg-input);
+      border-radius: 100px;
+      height: 4px;
+      overflow: hidden;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      border-radius: 100px;
+      width: 0%;
+      transition: width 0.4s cubic-bezier(.4,0,.2,1);
+    }
+
+    /* ── Responsive tweaks ── */
+    @media (max-width: 480px) {
+      .app-wrap { padding: 1.25rem 0.875rem 3rem; }
+      .card { padding: 1.15rem; }
+      .actions { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+<div class="app-wrap">
+
+  <header>
+    <div class="header-icon">
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 2C8.5 7 5 10.5 5 14a7 7 0 0014 0c0-3.5-3.5-7-7-12z" fill="#131313"/>
+        <path d="M9 16.5A3.5 3.5 0 0012.5 20" stroke="#131313" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <div class="header-text">
+      <h1>Water Safety Email Builder</h1>
+      <p>Automated chase-up emails for water sampling kits</p>
+    </div>
+  </header>
+
+  <div class="main-grid">
+
+    <!-- INPUT PANEL -->
+    <section class="card" aria-label="Email variables">
+      <div class="card-title">Variables</div>
+
+      <div class="progress-wrap">
+        <div class="progress-label">
+          <span>Fields completed</span>
+          <span id="progressCount">0 / 5</span>
+        </div>
+        <div class="progress-bar-bg">
+          <div class="progress-bar-fill" id="progressBar"></div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="propertyAddress">Property Address <span class="field-status" id="s-address"></span></label>
+        <input type="text" id="propertyAddress" placeholder="e.g. 42 Oak Street, Manchester, M1 2AB" autocomplete="off" />
+      </div>
+
+      <div class="field">
+        <label for="lettingAgentName">Letting Agent Name <span class="field-status" id="s-agent"></span></label>
+        <input type="text" id="lettingAgentName" placeholder="e.g. Smith & Co Lettings" autocomplete="off" />
+      </div>
+
+      <div class="field">
+        <label for="tenantName">Tenant Name <span class="field-status" id="s-tenant"></span></label>
+        <input type="text" id="tenantName" placeholder="e.g. Mr. James Carter" autocomplete="off" />
+      </div>
+
+      <div class="field">
+        <label for="timeOfDay">Time of Day <span class="field-status" id="s-time"></span></label>
+        <select id="timeOfDay">
+          <option value="">— Select —</option>
+          <option value="Morning">Morning</option>
+          <option value="Afternoon">Afternoon</option>
+          <option value="Evening">Evening</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="deliveryDate">Delivery Date <span class="field-status" id="s-date"></span></label>
+        <input type="date" id="deliveryDate" />
+      </div>
+    </section>
+
+    <!-- PREVIEW PANEL -->
+    <section class="card preview-card" aria-label="Email preview">
+      <div class="card-title">Preview</div>
+
+      <div class="email-preview" id="emailPreview" aria-live="polite">
+        <div class="label">Subject</div>
+        <div class="subject-line" id="previewSubject"></div>
+        <div class="email-body-text" id="previewBody"></div>
+      </div>
+
+      <div class="actions">
+        <button class="btn btn-primary" id="copyBtn" onclick="copyEmail()">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+          Copy Email
+        </button>
+        <button class="btn btn-secondary" id="mailtoBtn" onclick="openMailto()">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          Open in Mail
+        </button>
+      </div>
+    </section>
+
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast" role="status" aria-live="polite">
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+  <span id="toastMsg">Copied to clipboard!</span>
+</div>
+
+<script>
+  // ── Field references
+  const fields = {
+    propertyAddress: document.getElementById('propertyAddress'),
+    lettingAgentName: document.getElementById('lettingAgentName'),
+    tenantName: document.getElementById('tenantName'),
+    timeOfDay: document.getElementById('timeOfDay'),
+    deliveryDate: document.getElementById('deliveryDate'),
+  };
+
+  const statusDots = {
+    propertyAddress: document.getElementById('s-address'),
+    lettingAgentName: document.getElementById('s-agent'),
+    tenantName: document.getElementById('s-tenant'),
+    timeOfDay: document.getElementById('s-time'),
+    deliveryDate: document.getElementById('s-date'),
+  };
+
+  const previewSubject = document.getElementById('previewSubject');
+  const previewBody    = document.getElementById('previewBody');
+  const progressBar    = document.getElementById('progressBar');
+  const progressCount  = document.getElementById('progressCount');
+
+  // ── Format date nicely
+  function formatDate(val) {
+    if (!val) return null;
+    const [y, m, d] = val.split('-');
+    const months = ['January','February','March','April','May','June',
+                    'July','August','September','October','November','December'];
+    const day = parseInt(d, 10);
+    const suffix = (day === 1||day===21||day===31)?'st':(day===2||day===22)?'nd':(day===3||day===23)?'rd':'th';
+    return `${day}${suffix} ${months[parseInt(m,10)-1]} ${y}`;
+  }
+
+  // ── Build email parts
+  function getValues() {
+    return {
+      address:  fields.propertyAddress.value.trim(),
+      agent:    fields.lettingAgentName.value.trim(),
+      tenant:   fields.tenantName.value.trim(),
+      time:     fields.timeOfDay.value,
+      date:     fields.deliveryDate.value,
+    };
+  }
+
+  function buildSubject(v) {
+    const addr  = v.address || '{{PropertyAddress}}';
+    const agent = v.agent   || '{{LettingAgentName}}';
+    return `${addr} - Water Safety Checks for ${agent}`;
+  }
+
+  function buildBody(v) {
+    const addr   = v.address || '{{PropertyAddress}}';
+    const tenant = v.tenant  || '{{TenantName}}';
+    const time   = v.time    || '{{TimeOfDay}}';
+    const date   = v.date    ? formatDate(v.date) : '{{DeliveryDate}}';
+
+    return `Good ${time} ${tenant},
+
+I hope you are well.
+
+I'm writing regarding the water sampling kit delivered to:
+${addr}
+
+Our records show that the sampling kit was delivered on ${date}. For your reference, proof of delivery has been attached to this email.
+
+If you have not already done so, please complete the water samples and return them to us using the pre-paid returns label included within the sampling kit.
+
+Returning the samples promptly will help us ensure your drinking water is free from toxic levels of lead as quickly as possible.
+
+If you have already returned the samples, please disregard this email and accept our thanks.
+
+Should you have any questions or require any assistance, please do not hesitate to get in touch.
+
+Kind regards,`;
+  }
+
+  // ── Render preview with highlighted tokens
+  function highlight(text) {
+    return text.replace(/\{\{[^}]+\}\}/g, m =>
+      `<span class="token">${m}</span>`
+    );
+  }
+
+  function renderPreview() {
+    const v = getValues();
+
+    // Progress
+    const filled = [v.address, v.agent, v.tenant, v.time, v.date].filter(Boolean).length;
+    progressBar.style.width  = (filled / 5 * 100) + '%';
+    progressCount.textContent = `${filled} / 5`;
+
+    // Status dots
+    statusDots.propertyAddress.className = 'field-status' + (v.address ? ' filled' : '');
+    statusDots.lettingAgentName.className = 'field-status' + (v.agent   ? ' filled' : '');
+    statusDots.tenantName.className       = 'field-status' + (v.tenant  ? ' filled' : '');
+    statusDots.timeOfDay.className        = 'field-status' + (v.time    ? ' filled' : '');
+    statusDots.deliveryDate.className     = 'field-status' + (v.date    ? ' filled' : '');
+
+    // Subject
+    previewSubject.innerHTML = highlight(buildSubject(v));
+
+    // Body — render line-by-line preserving whitespace
+    const bodyLines = buildBody(v)
+      .split('\n')
+      .map(line => `<div>${highlight(line) || '&nbsp;'}</div>`)
+      .join('');
+    previewBody.innerHTML = bodyLines;
+  }
+
+  // ── Plain text for clipboard / mailto
+  function getPlainText() {
+    const v = getValues();
+    return buildBody(v);
+  }
+
+  // ── Copy to clipboard
+  function copyEmail() {
+    const v = getValues();
+    const full = `Subject: ${buildSubject(v)}\n\n${buildBody(v)}`;
+    navigator.clipboard.writeText(full).then(() => {
+      showToast('Copied to clipboard!');
+    }).catch(() => {
+      // Fallback
+      const ta = document.createElement('textarea');
+      ta.value = full;
+      ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      showToast('Copied to clipboard!');
+    });
+  }
+
+  // ── Open in mail client
+  function openMailto() {
+    const v = getValues();
+    const subject = encodeURIComponent(buildSubject(v));
+    const body    = encodeURIComponent(buildBody(v));
+    const link    = `mailto:?subject=${subject}&body=${body}`;
+    window.location.href = link;
+    showToast('Opening mail app…');
+  }
+
+  // ── Toast helper
+  let toastTimer;
+  function showToast(msg) {
+    const toast = document.getElementById('toast');
+    document.getElementById('toastMsg').textContent = msg;
+    toast.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toast.classList.remove('show'), 2400);
+  }
+
+  // ── Attach listeners to all fields
+  Object.values(fields).forEach(el => {
+    el.addEventListener('input', renderPreview);
+    el.addEventListener('change', renderPreview);
+  });
+
+  // ── Initial render
+  renderPreview();
+</script>
+</body>
+</html>
